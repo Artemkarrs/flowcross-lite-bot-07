@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Gift, Star, Diamond, Crown, Shield, Zap, Eye, Sparkles, Coins, Gamepad, Gem, Trophy, Target, Heart, Flame, Snowflake, Skull } from 'lucide-react';
+import { getBalance, addBalance, getGems, addGems } from '@/lib/localdb';
 
 interface CaseReward {
   type: 'coins' | 'skin' | 'ability' | 'flowplus' | 'verification' | 'multiplier' | 'gems';
@@ -298,7 +299,7 @@ const EnhancedCasesGame = () => {
   }, []);
 
   const getPlayerLevel = () => {
-    const coins = parseInt(localStorage.getItem('clickerCoins') || '0');
+    const coins = getBalance();
     return Math.floor(coins / 500) + 1;
   };
 
@@ -332,19 +333,6 @@ const EnhancedCasesGame = () => {
   const openCase = (caseConfig: CaseConfig) => {
     if (opening || isAnimating) return;
     
-    // Проверка дневного лимита для кейсов с монетами
-    const DAILY_COIN_LIMIT = 10000;
-    const currentDaily = parseInt(localStorage.getItem('clickerDailyCoins') || '0');
-    const hasCoinsReward = caseConfig.rewards.some(r => r.type === 'coins');
-    
-    if (hasCoinsReward && currentDaily >= DAILY_COIN_LIMIT) {
-      toast({
-        title: 'Дневной лимит достигнут',
-        description: `Кейс можно открыть, но монеты не будут начислены (лимит ${DAILY_COIN_LIMIT.toLocaleString()}/день)`,
-        variant: 'destructive'
-      });
-    }
-    
     const playerLevel = getPlayerLevel();
     if (caseConfig.minLevel && playerLevel < caseConfig.minLevel) {
       toast({
@@ -368,8 +356,8 @@ const EnhancedCasesGame = () => {
     }
 
     const balance = caseConfig.currency === 'FC' 
-      ? parseInt(localStorage.getItem('clickerCoins') || '0')
-      : gems;
+      ? getBalance()
+      : getGems();
     
     if (balance < caseConfig.price) {
       toast({
@@ -385,11 +373,9 @@ const EnhancedCasesGame = () => {
 
     // Списание средств
     if (caseConfig.currency === 'FC') {
-      const coins = parseInt(localStorage.getItem('clickerCoins') || '0');
-      localStorage.setItem('clickerCoins', String(coins - caseConfig.price));
+      addBalance(-caseConfig.price);
     } else {
-      const newGems = gems - caseConfig.price;
-      localStorage.setItem('playerGems', String(newGems));
+      addGems(-caseConfig.price);
     }
 
     // Создание анимационной ленты
@@ -450,45 +436,17 @@ const EnhancedCasesGame = () => {
   };
 
   const processReward = (result: any) => {
-    const DAILY_COIN_LIMIT = 10000;
-    
     switch (result.type) {
       case 'coins': {
-        const currentDaily = parseInt(localStorage.getItem('clickerDailyCoins') || '0');
-        const remainingLimit = DAILY_COIN_LIMIT - currentDaily;
-        
-        if (remainingLimit <= 0) {
-          toast({ 
-            title: "🚫 Дневной лимит достигнут!",
-            description: `Максимум ${DAILY_COIN_LIMIT.toLocaleString()} монет в день`,
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        const actualAmount = Math.min(result.amount, remainingLimit);
-        
-        if (actualAmount < result.amount) {
-          toast({ 
-            title: "⚠️ Частичное начисление",
-            description: `Получено ${actualAmount}/${result.amount} монет (лимит ${DAILY_COIN_LIMIT.toLocaleString()}/день)`,
-            variant: "destructive"
-          });
-        }
-        
-        const coins = parseInt(localStorage.getItem('clickerCoins') || '0');
-        localStorage.setItem('clickerCoins', String(coins + actualAmount));
-        const dailyCoins = parseInt(localStorage.getItem('clickerDailyCoins') || '0');
-        localStorage.setItem('clickerDailyCoins', String(dailyCoins + actualAmount));
+        addBalance(result.amount);
         toast({ 
           title: `💰 ${getRarityName(result.rarity)} награда!`,
-          description: `+${actualAmount.toLocaleString()} FC${actualAmount < result.amount ? ' (ограничено лимитом)' : ''}`
+          description: `+${result.amount.toLocaleString()} FC`
         });
         break;
       }
       case 'gems': {
-        const newGems = gems + result.amount;
-        localStorage.setItem('playerGems', String(newGems));
+        addGems(result.amount);
         toast({ 
           title: `💎 ${getRarityName(result.rarity)} награда!`,
           description: `+${result.amount} драгоценных камней`
@@ -525,8 +483,7 @@ const EnhancedCasesGame = () => {
                                result.rarity === 'epic' ? 3000 :
                                result.rarity === 'rare' ? 1000 : 500;
             
-            const coins = parseInt(localStorage.getItem('clickerCoins') || '0');
-            localStorage.setItem('clickerCoins', String(coins + compensation));
+            addBalance(compensation);
             
             toast({ 
               title: `💰 Дублирующийся скин!`,
@@ -566,8 +523,7 @@ const EnhancedCasesGame = () => {
                                result.rarity === 'epic' ? 5000 :
                                result.rarity === 'rare' ? 2500 : 1000;
             
-            const coins = parseInt(localStorage.getItem('clickerCoins') || '0');
-            localStorage.setItem('clickerCoins', String(coins + compensation));
+            addBalance(compensation);
             
             toast({ 
               title: `💰 Дублирующаяся способность!`,
@@ -696,7 +652,11 @@ const EnhancedCasesGame = () => {
         <div className="flex justify-center items-center space-x-4 text-sm">
           <div className="flex items-center space-x-1">
             <Coins className="w-4 h-4" />
-            <span>{parseInt(localStorage.getItem('clickerCoins') || '0').toLocaleString()} FC</span>
+            <span>{getBalance().toLocaleString()} FC</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Gem className="w-4 h-4" />
+            <span>{getGems().toLocaleString()} Gems</span>
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Zap, TrendingUp, Award, Palette, Shield, Clock, Star, Flame, Rocket, Save, Download, Upload, Crown, Diamond, Trophy, Target, Gift, Sparkles, Heart, Bomb, Coffee, Moon, Sun, Skull, Rainbow, Snowflake, Sword, Wand2, Languages, Globe, CircleDollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { translations, formatTime } from '@/lib/translations';
+import { getBalance, addBalance } from '@/lib/localdb';
 
 interface Achievement {
   id: string;
@@ -52,10 +53,8 @@ interface Skin {
   unlocked: boolean;
 }
 
-const DAILY_COIN_LIMIT = 10000;
-
 const ClickerGame = () => {
-  const [coins, setCoins] = useState(() => parseInt(localStorage.getItem('clickerCoins') || '0'));
+  const [coins, setCoins] = useState(() => getBalance());
   const [clickPower, setClickPower] = useState(() => parseInt(localStorage.getItem('clickerPower') || '1'));
   
   const [level, setLevel] = useState(() => parseInt(localStorage.getItem('clickerLevel') || '1'));
@@ -119,43 +118,11 @@ const ClickerGame = () => {
 
   const t = translations[language];
 
-  // Единая функция для добавления монет с проверкой лимита
+  // Упрощенная функция добавления монет без лимитов
   const addCoinsWithLimit = useCallback((amount: number, source: string = 'клик') => {
-    const currentDaily = parseInt(localStorage.getItem('clickerDailyCoins') || '0');
-    const remainingLimit = DAILY_COIN_LIMIT - currentDaily;
-    
-    if (remainingLimit <= 0) {
-      toast({
-        title: "🚫 Дневной лимит достигнут!",
-        description: `Максимум ${DAILY_COIN_LIMIT.toLocaleString()} монет в день`,
-        variant: "destructive"
-      });
-      return 0;
-    }
-    
-    const actualAmount = Math.min(amount, remainingLimit);
-    
-    if (actualAmount < amount) {
-      toast({
-        title: "⚠️ Частичное начисление",
-        description: `Получено ${actualAmount}/${amount} монет (лимит ${DAILY_COIN_LIMIT.toLocaleString()}/день)`,
-        variant: "destructive"
-      });
-    }
-    
-    setCoins(prev => prev + actualAmount);
-    setDailyCoins(prev => {
-      const newAmount = prev + actualAmount;
-      localStorage.setItem('clickerDailyCoins', newAmount.toString());
-      return newAmount;
-    });
-    
-    return actualAmount;
-  }, [toast]);
-
-  const checkDailyLimit = useCallback(() => {
-    const currentDaily = parseInt(localStorage.getItem('clickerDailyCoins') || '0');
-    return currentDaily >= DAILY_COIN_LIMIT;
+    addBalance(amount);
+    setCoins(prev => prev + amount);
+    return amount;
   }, []);
 
   const achievements: Achievement[] = [
@@ -617,8 +584,7 @@ const ClickerGame = () => {
       version: '2.0'
     };
 
-    // Save to localStorage
-    localStorage.setItem('clickerCoins', coins.toString());
+    // Монеты теперь сохраняются через основную систему localdb
     localStorage.setItem('clickerPower', clickPower.toString());
     
     localStorage.setItem('clickerLevel', level.toString());
@@ -735,10 +701,7 @@ const ClickerGame = () => {
     if (activeAbilities.auto_burst?.active) {
       const interval = setInterval(() => {
         if (activeAbilities.auto_burst?.active && activeAbilities.auto_burst.endTime > Date.now()) {
-          // Автоматический клик от абилки с проверкой лимита
-          if (checkDailyLimit()) {
-            return; // Прекращаем авто-клики если лимит достигнут
-          }
+      // Автоматический клик от абилки
           
           const isCritical = Math.random() < ((criticalUpgrade * 0.03) + (activeAbilities.critical_boost?.active ? 0.5 : 0));
           const baseMultiplier = multiplier * (activeAbilities.double_coins?.active ? 2 : 1);
@@ -824,14 +787,6 @@ const ClickerGame = () => {
       const reward = Math.random() < 0.7 ? getGoldenClickCoins() : getRandomCase();
       
       if (typeof reward === 'number') {
-        if (checkDailyLimit()) {
-          toast({
-            title: "🚫 Дневной лимит достигнут!",
-            description: `Награда за достижение отложена до завтра`,
-            variant: "destructive"
-          });
-          return; // Не выдаем награду, но отмечаем достижение как выполненное
-        }
         
         addCoinsWithLimit(reward, 'достижение');
         
@@ -863,15 +818,7 @@ const ClickerGame = () => {
     const autoUpgradeBonus = activeAbilities.auto_upgrade?.active ? 1.5 : 1;
     const finalPower = Math.floor(clickPower * baseMultiplier * autoUpgradeBonus * (isCritical ? 3 : 1));
 
-    // Проверка дневного лимита
-    if (checkDailyLimit()) {
-      toast({
-        title: "🚫 Дневной лимит достигнут!",
-        description: `Максимум ${DAILY_COIN_LIMIT.toLocaleString()} монет в день`,
-        variant: "destructive"
-      });
-      return;
-    }
+    // Добавляем коины через основную систему
     const actualAmount = addCoinsWithLimit(finalPower, 'клик');
 
     // Звук клика и создание партиклов при каждом клике
@@ -1292,35 +1239,12 @@ const ClickerGame = () => {
           )}
         </div>
         
-        {/* Лимиты коинов */}
+        {/* Статистика кликера */}
         <div className="flex items-center justify-center space-x-6 text-xs text-muted-foreground">
-          <div className="flex items-center space-x-1">
-            <CircleDollarSign className="w-3 h-3" />
-            <span className={dailyCoins >= DAILY_COIN_LIMIT * 0.9 ? 'text-destructive font-semibold' : ''}>
-              Дневные коины: {dailyCoins.toLocaleString()}/{DAILY_COIN_LIMIT.toLocaleString()}
-            </span>
-          </div>
           <div className="flex items-center space-x-1">
             <Shield className="w-3 h-3" />
             <span>CPS: {clicksPerSecond}/40</span>
           </div>
-        </div>
-        
-        {/* Предупреждение о лимите */}
-        {dailyCoins >= DAILY_COIN_LIMIT * 0.9 && (
-          <div className="text-center">
-            <p className="text-xs text-destructive font-medium">
-              {dailyCoins >= DAILY_COIN_LIMIT 
-                ? '🚫 Дневной лимит достигнут! Возвращайтесь завтра'
-                : '⚠️ Осталось менее 10% от дневного лимита'
-              }
-            </p>
-          </div>
-        )}
-        
-        {/* Прогресс-бар лимита */}
-        <div className="space-y-1">
-          <Progress value={(dailyCoins / DAILY_COIN_LIMIT) * 100} className="h-2" />
         </div>
       </div>
 
@@ -1334,9 +1258,7 @@ const ClickerGame = () => {
             <Button
               ref={clickButtonRef}
               onClick={handleClick}
-              disabled={checkDailyLimit()}
-              className={`click-button hover-glow relative overflow-hidden w-48 h-48 text-3xl font-bold transition-all duration-200 ${getCurrentSkin().color} ${skinEffect} ${goldenClickActive ? 'animate-pulse border-yellow-400 shadow-yellow-400/50' : ''}
-                ${checkDailyLimit() ? 'opacity-50 cursor-not-allowed' : ''}
+              className={`click-button hover-glow relative overflow-hidden w-24 h-24 text-xl font-bold transition-all duration-200 ${getCurrentSkin().color} ${skinEffect} ${goldenClickActive ? 'animate-pulse border-yellow-400 shadow-yellow-400/50' : ''}
                 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent
                 border-4 ${goldenClickActive ? 'border-yellow-400' : 'border-primary/30'}
                 hover:scale-105 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/40 hover:rotate-2

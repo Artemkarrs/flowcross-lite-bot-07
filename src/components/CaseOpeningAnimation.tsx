@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Package, Sparkles } from 'lucide-react';
-import { InventoryItem, CASE_CONTENTS, CaseItem } from '@/lib/localdb';
+import { InventoryItem, CASE_CONTENTS, CaseItem, addBalance, addGems } from '@/lib/localdb';
 
 interface CaseOpeningAnimationProps {
   caseItem: InventoryItem;
@@ -79,6 +79,13 @@ const CaseOpeningAnimation = ({ caseItem, onComplete, onClose }: CaseOpeningAnim
 
   const handleComplete = () => {
     if (selectedReward) {
+      // Добавляем награду в основную систему
+      if (selectedReward.type === 'coins') {
+        addBalance(selectedReward.value);
+      } else if (selectedReward.type === 'gems') {
+        addGems(selectedReward.value);
+      }
+      
       onComplete(selectedReward);
       onClose(); // Закрываем после обработки награды
     }
