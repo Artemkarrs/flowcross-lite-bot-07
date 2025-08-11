@@ -12,6 +12,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
     { id: 'clicker', icon: Play, label: 'Кликер' },
     { id: 'cases', icon: Gamepad, label: 'Кейсы' },
     { id: 'inventory', icon: Package, label: 'Инвентарь' },
+    { id: 'cards', icon: Map, label: 'Карты' },
     { id: 'data', icon: Database, label: 'Данные' },
   ];
 
