@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Download, Upload, RotateCcw, Database, Clock } from 'lucide-react';
+import { Save, Download, Upload, RotateCcw, Database, Clock, Copy, Check } from 'lucide-react';
 import { 
   exportGameData, 
   importGameData, 
@@ -20,6 +21,9 @@ const GameDataManager = () => {
   const [importData, setImportData] = useState('');
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportedData, setExportedData] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // Загрузить данные при запуске компонента
@@ -46,19 +50,12 @@ const GameDataManager = () => {
   const handleExport = () => {
     try {
       const data = exportGameData();
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `flowgame_save_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setExportedData(data);
+      setShowExportDialog(true);
       
       toast({
-        title: "Экспорт завершен",
-        description: "Сохранение загружено на устройство"
+        title: "Экспорт готов",
+        description: "JSON код доступен для копирования"
       });
     } catch (error) {
       toast({
@@ -67,6 +64,42 @@ const GameDataManager = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleCopyExport = async () => {
+    try {
+      await navigator.clipboard.writeText(exportedData);
+      setCopied(true);
+      toast({
+        title: "Скопировано!",
+        description: "JSON код скопирован в буфер обмена"
+      });
+      
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Ошибка копирования",
+        description: "Не удалось скопировать в буфер обмена",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDownloadExport = () => {
+    const blob = new Blob([exportedData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `flowgame_save_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Файл загружен",
+      description: "Сохранение загружено на устройство"
+    });
   };
 
   const handleImport = () => {
@@ -289,6 +322,55 @@ const GameDataManager = () => {
           <div>• <strong>Прогресс:</strong> карты, время игры, метаданные</div>
         </div>
       </Card>
+
+      {/* Диалог экспорта */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="glass max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Download className="w-5 h-5 mr-2 text-primary" />
+              Экспорт Данных
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Скопируйте JSON код или загрузите как файл:
+            </p>
+            
+            <Textarea
+              value={exportedData}
+              readOnly
+              className="glass min-h-[200px] text-xs font-mono"
+              placeholder="JSON данные появятся здесь..."
+            />
+            
+            <div className="flex gap-3">
+              <Button 
+                onClick={handleCopyExport} 
+                className="glass-button flex-1"
+                disabled={!exportedData}
+              >
+                {copied ? (
+                  <Check className="w-4 h-4 mr-2 text-green-400" />
+                ) : (
+                  <Copy className="w-4 h-4 mr-2" />
+                )}
+                {copied ? 'Скопировано!' : 'Копировать'}
+              </Button>
+              
+              <Button 
+                onClick={handleDownloadExport} 
+                variant="outline" 
+                className="glass flex-1"
+                disabled={!exportedData}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Скачать файл
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
