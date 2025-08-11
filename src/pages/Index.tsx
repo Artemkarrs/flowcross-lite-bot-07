@@ -10,11 +10,21 @@ import Cards from '@/components/Cards';
 import AppLoader from '@/components/AppLoader';
 import GemCounter from '@/components/GemCounter';
 import GemCollector from '@/components/GemCollector';
+import GameDataManager from '@/components/GameDataManager';
+import { enableAutoSave, loadAllGameData } from '@/lib/localdb';
 import { Play, Gamepad, MessageCircle, CreditCard, Info } from 'lucide-react';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Инициализация системы сохранений
+  useEffect(() => {
+    // Загрузить все данные при запуске
+    loadAllGameData();
+    // Включить автосохранение
+    enableAutoSave();
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -28,6 +38,8 @@ const Index = () => {
         return <div className="animate-fade-in"><BankingApp /></div>;
       case 'cards':
         return <div className="animate-slide-in-left"><Cards /></div>;
+      case 'data':
+        return <div className="animate-scale-in"><GameDataManager /></div>;
       default:
         return <div className="animate-fade-in"><HomeContent /></div>;
     }
@@ -40,6 +52,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden enhanced-bg">
       <div className="relative z-10 flex flex-col h-screen max-w-md mx-auto">
+        <GemCounter />
         <main className="flex-1 p-4 pb-28 overflow-y-auto">
           <div className="fade-in">
             {renderContent()}
