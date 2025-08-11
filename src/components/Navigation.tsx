@@ -1,4 +1,4 @@
-import { Home, Play, Gamepad, Package, CreditCard, Map } from 'lucide-react';
+import { Home, Play, Gamepad, Package, Database, Map } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavigationProps {
@@ -12,7 +12,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
     { id: 'clicker', icon: Play, label: 'Кликер' },
     { id: 'cases', icon: Gamepad, label: 'Кейсы' },
     { id: 'inventory', icon: Package, label: 'Инвентарь' },
-    { id: 'cards', icon: Map, label: 'Карты' },
+    { id: 'data', icon: Database, label: 'Данные' },
   ];
 
   return (

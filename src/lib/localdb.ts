@@ -184,7 +184,276 @@ export function rememberPinForSession(minutes = 15) {
 }
 export function isPinRemembered(): boolean { return getCookie('fb_pin_ok') === '1'; }
 
-// Guest Balance Functions
+// Comprehensive Game Save System
+export type GameSaveData = {
+  // Кликер данные
+  clickerCoins: number;
+  clickerLevel: number;
+  clickerPower: number;
+  clickerTotalClicks: number;
+  clickerPlayTime: number;
+  clickerSkin: string;
+  clickerAchievements: string[];
+  clickerCritical: number;
+  clickerSpeed: number;
+  clickerAbilitiesUsed: number;
+  clickerOwnedSkins: string[];
+  clickerOwnedAbilities: string[];
+  clickerActiveAbilities: {[key: string]: {endTime: number, active: boolean}};
+  clickerAbilityCooldowns: {[key: string]: number};
+  clickerTutorialCompleted: boolean;
+  
+  // Кейсы данные
+  dailyCaseOpenings: {[key: string]: number};
+  lastDailyReset: string;
+  
+  // Змейка данные
+  snakeHighScore: number;
+  snakeTotalScore: number;
+  snakeGamesPlayed: number;
+  snakeFoodEaten: number;
+  snakePerfectGames: number;
+  snakeAchievements: string[];
+  
+  // Общие ресурсы
+  gems: number;
+  balance: number;
+  
+  // Инвентарь
+  inventory: InventoryItem[];
+  
+  // Карты
+  lastCardTime: number;
+  
+  // Метаданные
+  lastSaved: number;
+  version: string;
+};
+
+const CURRENT_SAVE_VERSION = "1.0.0";
+
+// Получение полных данных сохранения
+export function getFullSaveData(): GameSaveData {
+  const defaultSave: GameSaveData = {
+    clickerCoins: 0,
+    clickerLevel: 1,
+    clickerPower: 1,
+    clickerTotalClicks: 0,
+    clickerPlayTime: 0,
+    clickerSkin: 'default',
+    clickerAchievements: [],
+    clickerCritical: 0,
+    clickerSpeed: 0,
+    clickerAbilitiesUsed: 0,
+    clickerOwnedSkins: ['default'],
+    clickerOwnedAbilities: [],
+    clickerActiveAbilities: {},
+    clickerAbilityCooldowns: {},
+    clickerTutorialCompleted: false,
+    dailyCaseOpenings: {},
+    lastDailyReset: '',
+    snakeHighScore: 0,
+    snakeTotalScore: 0,
+    snakeGamesPlayed: 0,
+    snakeFoodEaten: 0,
+    snakePerfectGames: 0,
+    snakeAchievements: [],
+    gems: 0,
+    balance: 0,
+    inventory: [],
+    lastCardTime: 0,
+    lastSaved: Date.now(),
+    version: CURRENT_SAVE_VERSION
+  };
+
+  try {
+    const saved = readJSON<GameSaveData>('game_save_data', defaultSave);
+    return { ...defaultSave, ...saved };
+  } catch {
+    return defaultSave;
+  }
+}
+
+// Сохранение полных данных
+export function saveFullGameData(data: Partial<GameSaveData>) {
+  const current = getFullSaveData();
+  const updated = {
+    ...current,
+    ...data,
+    lastSaved: Date.now(),
+    version: CURRENT_SAVE_VERSION
+  };
+  writeJSON('game_save_data', updated);
+  return updated;
+}
+
+// Автосохранение каждые 30 секунд
+let autoSaveInterval: NodeJS.Timeout | null = null;
+
+export function enableAutoSave() {
+  if (autoSaveInterval) return;
+  
+  autoSaveInterval = setInterval(() => {
+    try {
+      syncAllGameData();
+    } catch (error) {
+      console.warn('Ошибка автосохранения:', error);
+    }
+  }, 30000); // 30 секунд
+}
+
+export function disableAutoSave() {
+  if (autoSaveInterval) {
+    clearInterval(autoSaveInterval);
+    autoSaveInterval = null;
+  }
+}
+
+// Синхронизация всех данных из localStorage в центральное сохранение
+export function syncAllGameData() {
+  const saveData: Partial<GameSaveData> = {
+    // Кликер
+    clickerCoins: parseInt(localStorage.getItem('clickerCoins') || '0'),
+    clickerLevel: parseInt(localStorage.getItem('clickerLevel') || '1'),
+    clickerPower: parseInt(localStorage.getItem('clickerPower') || '1'),
+    clickerTotalClicks: parseInt(localStorage.getItem('clickerTotalClicks') || '0'),
+    clickerPlayTime: parseInt(localStorage.getItem('clickerPlayTime') || '0'),
+    clickerSkin: localStorage.getItem('clickerSkin') || 'default',
+    clickerAchievements: JSON.parse(localStorage.getItem('clickerAchievements') || '[]'),
+    clickerCritical: parseInt(localStorage.getItem('clickerCritical') || '0'),
+    clickerSpeed: parseInt(localStorage.getItem('clickerSpeed') || '0'),
+    clickerAbilitiesUsed: parseInt(localStorage.getItem('clickerAbilitiesUsed') || '0'),
+    clickerOwnedSkins: JSON.parse(localStorage.getItem('clickerOwnedSkins') || '["default"]'),
+    clickerOwnedAbilities: JSON.parse(localStorage.getItem('clickerOwnedAbilities') || '[]'),
+    clickerActiveAbilities: JSON.parse(localStorage.getItem('clickerActiveAbilities') || '{}'),
+    clickerAbilityCooldowns: JSON.parse(localStorage.getItem('clickerAbilityCooldowns') || '{}'),
+    clickerTutorialCompleted: localStorage.getItem('clickerTutorialCompleted') === 'true',
+    
+    // Кейсы
+    dailyCaseOpenings: JSON.parse(localStorage.getItem('dailyCaseOpenings') || '{}'),
+    lastDailyReset: localStorage.getItem('lastDailyReset') || '',
+    
+    // Змейка
+    snakeHighScore: parseInt(localStorage.getItem('snakeHighScore') || '0'),
+    snakeTotalScore: parseInt(localStorage.getItem('snakeTotalScore') || '0'),
+    snakeGamesPlayed: parseInt(localStorage.getItem('snakeGamesPlayed') || '0'),
+    snakeFoodEaten: parseInt(localStorage.getItem('snakeFoodEaten') || '0'),
+    snakePerfectGames: parseInt(localStorage.getItem('snakePerfectGames') || '0'),
+    snakeAchievements: JSON.parse(localStorage.getItem('snakeAchievements') || '[]'),
+    
+    // Ресурсы
+    gems: getGems(),
+    balance: getBalance(),
+    inventory: getInventory(),
+    lastCardTime: getLastCardTime()
+  };
+  
+  return saveFullGameData(saveData);
+}
+
+// Загрузка всех данных обратно в localStorage
+export function loadAllGameData() {
+  const data = getFullSaveData();
+  
+  // Кликер
+  localStorage.setItem('clickerCoins', data.clickerCoins.toString());
+  localStorage.setItem('clickerLevel', data.clickerLevel.toString());
+  localStorage.setItem('clickerPower', data.clickerPower.toString());
+  localStorage.setItem('clickerTotalClicks', data.clickerTotalClicks.toString());
+  localStorage.setItem('clickerPlayTime', data.clickerPlayTime.toString());
+  localStorage.setItem('clickerSkin', data.clickerSkin);
+  localStorage.setItem('clickerAchievements', JSON.stringify(data.clickerAchievements));
+  localStorage.setItem('clickerCritical', data.clickerCritical.toString());
+  localStorage.setItem('clickerSpeed', data.clickerSpeed.toString());
+  localStorage.setItem('clickerAbilitiesUsed', data.clickerAbilitiesUsed.toString());
+  localStorage.setItem('clickerOwnedSkins', JSON.stringify(data.clickerOwnedSkins));
+  localStorage.setItem('clickerOwnedAbilities', JSON.stringify(data.clickerOwnedAbilities));
+  localStorage.setItem('clickerActiveAbilities', JSON.stringify(data.clickerActiveAbilities));
+  localStorage.setItem('clickerAbilityCooldowns', JSON.stringify(data.clickerAbilityCooldowns));
+  if (data.clickerTutorialCompleted) {
+    localStorage.setItem('clickerTutorialCompleted', 'true');
+  }
+  
+  // Кейсы
+  localStorage.setItem('dailyCaseOpenings', JSON.stringify(data.dailyCaseOpenings));
+  localStorage.setItem('lastDailyReset', data.lastDailyReset);
+  
+  // Змейка
+  localStorage.setItem('snakeHighScore', data.snakeHighScore.toString());
+  localStorage.setItem('snakeTotalScore', data.snakeTotalScore.toString());
+  localStorage.setItem('snakeGamesPlayed', data.snakeGamesPlayed.toString());
+  localStorage.setItem('snakeFoodEaten', data.snakeFoodEaten.toString());
+  localStorage.setItem('snakePerfectGames', data.snakePerfectGames.toString());
+  localStorage.setItem('snakeAchievements', JSON.stringify(data.snakeAchievements));
+  
+  // Ресурсы
+  setGems(data.gems);
+  setBalance(data.balance);
+  
+  // Инвентарь
+  const inventory = readJSON<Record<string, InventoryItem[]>>('db.inventory', {});
+  inventory[GUEST_USER_ID] = data.inventory;
+  writeJSON('db.inventory', inventory);
+  
+  // Карты
+  setLastCardTime(data.lastCardTime);
+  
+  return data;
+}
+
+// Экспорт данных для внешнего сохранения
+export function exportGameData(): string {
+  const data = syncAllGameData();
+  return JSON.stringify(data, null, 2);
+}
+
+// Импорт данных из внешнего источника
+export function importGameData(jsonData: string): boolean {
+  try {
+    const data = JSON.parse(jsonData) as GameSaveData;
+    
+    // Проверка валидности данных
+    if (!data.version || typeof data.balance !== 'number') {
+      throw new Error('Некорректный формат данных');
+    }
+    
+    saveFullGameData(data);
+    loadAllGameData();
+    return true;
+  } catch (error) {
+    console.error('Ошибка импорта данных:', error);
+    return false;
+  }
+}
+
+// Сброс всех данных игры
+export function resetAllGameData() {
+  // Очистить localStorage
+  const keysToRemove = [
+    'clickerCoins', 'clickerLevel', 'clickerPower', 'clickerTotalClicks',
+    'clickerPlayTime', 'clickerSkin', 'clickerAchievements', 'clickerCritical',
+    'clickerSpeed', 'clickerAbilitiesUsed', 'clickerOwnedSkins', 'clickerOwnedAbilities',
+    'clickerActiveAbilities', 'clickerAbilityCooldowns', 'clickerTutorialCompleted',
+    'dailyCaseOpenings', 'lastDailyReset', 'snakeHighScore', 'snakeTotalScore',
+    'snakeGamesPlayed', 'snakeFoodEaten', 'snakePerfectGames', 'snakeAchievements'
+  ];
+  
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+  
+  // Сброс центральных данных
+  writeJSON('game_save_data', {});
+  writeJSON('db.gems', {});
+  writeJSON(KEYS.balances, {});
+  writeJSON('db.inventory', {});
+  writeJSON('db.lastCardTime', 0);
+  
+  // Создать новое чистое сохранение
+  const cleanSave = getFullSaveData();
+  saveFullGameData(cleanSave);
+  giveStarterItems();
+}
+
+// Guest Balance Functions (обновленные для работы с новой системой)
 export function getBalance(): number {
   const balances = readJSON<Record<string, number>>(KEYS.balances, {});
   return balances[GUEST_USER_ID] ?? 0;
@@ -194,6 +463,11 @@ export function setBalance(value: number) {
   const balances = readJSON<Record<string, number>>(KEYS.balances, {});
   balances[GUEST_USER_ID] = Math.max(0, Math.floor(value));
   writeJSON(KEYS.balances, balances);
+  
+  // Обновить центральное сохранение
+  const currentSave = getFullSaveData();
+  currentSave.balance = balances[GUEST_USER_ID];
+  saveFullGameData(currentSave);
 }
 
 export function addBalance(delta: number) {
@@ -226,6 +500,11 @@ export function setGems(value: number) {
   const gems = readJSON<Record<string, number>>('db.gems', {});
   gems[GUEST_USER_ID] = Math.max(0, Math.floor(value));
   writeJSON('db.gems', gems);
+  
+  // Обновить центральное сохранение
+  const currentSave = getFullSaveData();
+  currentSave.gems = gems[GUEST_USER_ID];
+  saveFullGameData(currentSave);
 }
 
 export function addGems(delta: number) {
