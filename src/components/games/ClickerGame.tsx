@@ -56,8 +56,18 @@ interface Skin {
 const ClickerGame = () => {
   const [coins, setCoins] = useState(() => getBalance());
   const [clickPower, setClickPower] = useState(() => parseInt(localStorage.getItem('clickerPower') || '1'));
+  const [criticalUpgrade, setCriticalUpgrade] = useState(() => parseInt(localStorage.getItem('clickerCritical') || '0'));
+  const [speedUpgrade, setSpeedUpgrade] = useState(() => parseInt(localStorage.getItem('clickerSpeed') || '0'));
+  const [cooldownLevel, setCooldownLevel] = useState(() => parseInt(localStorage.getItem('clickerCooldownLevel') || '0'));
   
-  const [level, setLevel] = useState(() => parseInt(localStorage.getItem('clickerLevel') || '1'));
+  // Вычисляемый уровень на основе улучшений и монет
+  const calculateLevel = useCallback(() => {
+    const upgradesValue = clickPower + criticalUpgrade + speedUpgrade + cooldownLevel;
+    const coinsBonus = Math.floor(coins / 1000);
+    return Math.floor((upgradesValue * 5) + (coinsBonus * 0.1)) + 1;
+  }, [clickPower, criticalUpgrade, speedUpgrade, cooldownLevel, coins]);
+  
+  const [level, setLevel] = useState(() => calculateLevel());
   const [totalClicks, setTotalClicks] = useState(() => parseInt(localStorage.getItem('clickerTotalClicks') || '0'));
   const [playTime, setPlayTime] = useState(() => parseInt(localStorage.getItem('clickerPlayTime') || '0'));
   const [lastClickTime, setLastClickTime] = useState(Date.now());
@@ -67,8 +77,6 @@ const ClickerGame = () => {
     JSON.parse(localStorage.getItem('clickerAchievements') || '[]')
   );
   const [multiplier, setMultiplier] = useState(1);
-  const [criticalUpgrade, setCriticalUpgrade] = useState(() => parseInt(localStorage.getItem('clickerCritical') || '0'));
-  const [speedUpgrade, setSpeedUpgrade] = useState(() => parseInt(localStorage.getItem('clickerSpeed') || '0'));
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [autoSave, setAutoSave] = useState(true);
   const [floatingTexts, setFloatingTexts] = useState<Array<{id: number, x: number, y: number, text: string, color: string}>>([]);
@@ -83,6 +91,17 @@ const ClickerGame = () => {
   // Константа с множителями для прокачки (увеличены цены)
   const priceMultipliers = [15, 35, 80, 200, 500, 1200, 3000];
   
+  // Требования уровня для улучшений
+  const getLevelRequirement = (upgradeLevel: number, type: 'critical' | 'speed' | 'power') => {
+    if (type === 'critical') {
+      return Math.floor(upgradeLevel * 2.5) + 5;
+    }
+    if (type === 'speed') {
+      return Math.floor(upgradeLevel * 1.8) + 3;
+    }
+    return Math.floor(upgradeLevel * 1.2) + 1;
+  };
+  
   // Новые состояния для лимитов коинов и сохранений
   const [dailyCoins, setDailyCoins] = useState(() => parseInt(localStorage.getItem('clickerDailyCoins') || '0'));
   const [lastDailyReset, setLastDailyReset] = useState(() => parseInt(localStorage.getItem('clickerLastDailyReset') || Date.now().toString()));
@@ -93,7 +112,6 @@ const ClickerGame = () => {
   const [ownedAbilities, setOwnedAbilities] = useState<string[]>(() => JSON.parse(localStorage.getItem('clickerOwnedAbilities') || '[]'));
   
   // Кулдаун клика и лимиты кликов
-  const [cooldownLevel, setCooldownLevel] = useState(() => parseInt(localStorage.getItem('clickerCooldownLevel') || '0'));
   const [cooldownUntil, setCooldownUntil] = useState<number>(0);
   const [hourlyClicks, setHourlyClicks] = useState(() => parseInt(localStorage.getItem('clickerHourlyClicks') || '0'));
   const [lastHourlyReset, setLastHourlyReset] = useState(() => parseInt(localStorage.getItem('clickerLastHourlyReset') || Date.now().toString()));
@@ -857,6 +875,17 @@ const ClickerGame = () => {
   };
 
   const buyClickPower = () => {
+    const requiredLevel = getLevelRequirement(clickPower - 1, 'power');
+    if (level < requiredLevel) {
+      toast({
+        title: "🔒 Недостаточный уровень!",
+        description: `Требуется уровень ${requiredLevel}`,
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+    
     const multiplierIndex = Math.min(clickPower - 1, priceMultipliers.length - 1);
     const multiplier = multiplierIndex >= 0 ? priceMultipliers[multiplierIndex] : 5;
     const cost = Math.floor(clickPower * multiplier * (activeAbilities.auto_upgrade?.active ? 0.5 : 1));
@@ -881,9 +910,31 @@ const ClickerGame = () => {
 
 
   const buyCriticalUpgrade = () => {
+    // Максимум 25% критического удара (8.33 уровня при 3% за уровень)
+    if (criticalUpgrade >= 8) {
+      toast({
+        title: "⭐ Максимальный уровень!",
+        description: "Критический урон достиг максимума (25%)",
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+    
+    const requiredLevel = getLevelRequirement(criticalUpgrade, 'critical');
+    if (level < requiredLevel) {
+      toast({
+        title: "🔒 Недостаточный уровень!",
+        description: `Требуется уровень ${requiredLevel}`,
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+    
     const multiplierIndex = Math.min(criticalUpgrade, priceMultipliers.length - 1);
     const multiplier = priceMultipliers[multiplierIndex];
-    const cost = Math.floor((criticalUpgrade + 1) * multiplier * (activeAbilities.auto_upgrade?.active ? 0.5 : 1));
+    const cost = Math.floor((criticalUpgrade + 1) * multiplier * 2.5 * (activeAbilities.auto_upgrade?.active ? 0.5 : 1));
     if (coins >= cost) {
       setCoins(prev => prev - cost);
       setCriticalUpgrade(prev => prev + 1);
@@ -1048,6 +1099,18 @@ const ClickerGame = () => {
 
   const buyCooldownUpgrade = () => {
     if (cooldownLevel >= 17) return;
+    
+    const requiredLevel = getLevelRequirement(cooldownLevel, 'speed');
+    if (level < requiredLevel) {
+      toast({
+        title: "🔒 Недостаточный уровень!",
+        description: `Требуется уровень ${requiredLevel}`,
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+    
     const cost = 10000 * Math.pow(cooldownLevel + 1, 2);
     if (coins < cost) return;
     setCoins(prev => prev - cost);
@@ -1350,12 +1413,12 @@ const ClickerGame = () => {
               <div>
                 <div className="font-medium">Сила клика</div>
                 <div className="text-sm text-muted-foreground">
-                  Текущая: {clickPower}
+                  Текущая: {clickPower} | Треб. ур.: {getLevelRequirement(clickPower - 1, 'power')}
                 </div>
               </div>
               <Button
                 onClick={buyClickPower}
-                disabled={coins < Math.floor(clickPower * (clickPower <= priceMultipliers.length ? priceMultipliers[clickPower - 1] : 700) * (activeAbilities.auto_upgrade?.active ? 0.5 : 1))}
+                disabled={coins < Math.floor(clickPower * (clickPower <= priceMultipliers.length ? priceMultipliers[clickPower - 1] : 700) * (activeAbilities.auto_upgrade?.active ? 0.5 : 1)) || level < getLevelRequirement(clickPower - 1, 'power')}
                 variant="outline"
                 size="sm"
                 className="glass-button"
@@ -1371,20 +1434,20 @@ const ClickerGame = () => {
               <div>
                 <div className="font-medium flex items-center">
                   <Star className="w-4 h-4 mr-2 text-orange-400" />
-                  Критический удар
+                  Критический удар {criticalUpgrade >= 8 ? "(МАКС)" : ""}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Шанс: {(criticalUpgrade * 3).toFixed(1)}%
+                  Шанс: {Math.min(criticalUpgrade * 3, 25).toFixed(1)}% / 25% | Треб. ур.: {getLevelRequirement(criticalUpgrade, 'critical')}
                 </div>
               </div>
               <Button
                 onClick={buyCriticalUpgrade}
-                disabled={coins < Math.floor((criticalUpgrade + 1) * (criticalUpgrade < priceMultipliers.length ? priceMultipliers[criticalUpgrade] : 700) * (activeAbilities.auto_upgrade?.active ? 0.5 : 1))}
+                disabled={criticalUpgrade >= 8 || coins < Math.floor((criticalUpgrade + 1) * (criticalUpgrade < priceMultipliers.length ? priceMultipliers[criticalUpgrade] : 700) * 2.5 * (activeAbilities.auto_upgrade?.active ? 0.5 : 1)) || level < getLevelRequirement(criticalUpgrade, 'critical')}
                 variant="outline"
                 size="sm"
                 className="glass-button"
               >
-                {Math.floor((criticalUpgrade + 1) * (criticalUpgrade < priceMultipliers.length ? priceMultipliers[criticalUpgrade] : 700) * (activeAbilities.auto_upgrade?.active ? 0.5 : 1)).toLocaleString()} FC
+                {criticalUpgrade >= 8 ? "МАКС" : `${Math.floor((criticalUpgrade + 1) * (criticalUpgrade < priceMultipliers.length ? priceMultipliers[criticalUpgrade] : 700) * 2.5 * (activeAbilities.auto_upgrade?.active ? 0.5 : 1)).toLocaleString()} FC`}
               </Button>
             </div>
           </Card>
