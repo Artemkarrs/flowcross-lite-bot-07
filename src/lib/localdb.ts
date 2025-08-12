@@ -435,7 +435,8 @@ export function resetAllGameData() {
     'clickerSpeed', 'clickerAbilitiesUsed', 'clickerOwnedSkins', 'clickerOwnedAbilities',
     'clickerActiveAbilities', 'clickerAbilityCooldowns', 'clickerTutorialCompleted',
     'dailyCaseOpenings', 'lastDailyReset', 'snakeHighScore', 'snakeTotalScore',
-    'snakeGamesPlayed', 'snakeFoodEaten', 'snakePerfectGames', 'snakeAchievements'
+    'snakeGamesPlayed', 'snakeFoodEaten', 'snakePerfectGames', 'snakeAchievements',
+    'clickerSuperPower', 'clickerEnergyBooster', 'clickerLuckyClick', 'clickerMastery'
   ];
   
   keysToRemove.forEach(key => localStorage.removeItem(key));
@@ -444,6 +445,15 @@ export function resetAllGameData() {
   writeJSON('game_save_data', {});
   writeJSON('db.gems', {});
   writeJSON(KEYS.balances, {});
+  
+  // Сброс всех пользователей на 0 монет и гемов
+  setGems(0);
+  setBalance(0);
+  
+  // Очистка инвентаря
+  const inventory = readJSON<Record<string, InventoryItem[]>>('db.inventory', {});
+  inventory[GUEST_USER_ID] = [];
+  writeJSON('db.inventory', inventory);
   writeJSON('db.inventory', {});
   writeJSON('db.lastCardTime', 0);
   

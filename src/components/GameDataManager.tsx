@@ -132,11 +132,11 @@ const GameDataManager = () => {
   };
 
   const handleReset = () => {
-    if (window.confirm('Вы уверены? Все данные будут удалены безвозвратно!')) {
+    if (window.confirm('Вы уверены? Все данные будут удалены безвозвратно! ВКЛЮЧАЯ ВСЕ ДЕНЬГИ, ГЕМЫ И УЛУЧШЕНИЯ!')) {
       resetAllGameData();
       toast({
-        title: "Данные сброшены",
-        description: "Все игровые данные удалены"
+        title: "Полный сброс выполнен",
+        description: "Все игровые данные, деньги, гемы и улучшения удалены"
       });
       setLastSyncTime(new Date());
       // Перезагрузить страницу

@@ -80,8 +80,8 @@ const ClickerGame = () => {
   const [lastGoldenClick, setLastGoldenClick] = useState(() => parseInt(localStorage.getItem('clickerLastGoldenClick') || Date.now().toString()));
   const [goldenClickActive, setGoldenClickActive] = useState(false);
   
-  // Константа с множителями для прокачки
-  const priceMultipliers = [5, 10, 15, 25, 50, 150, 700];
+  // Константа с множителями для прокачки (увеличены цены)
+  const priceMultipliers = [15, 35, 80, 200, 500, 1200, 3000];
   
   // Новые состояния для лимитов коинов и сохранений
   const [dailyCoins, setDailyCoins] = useState(() => parseInt(localStorage.getItem('clickerDailyCoins') || '0'));
@@ -1405,19 +1405,19 @@ const ClickerGame = () => {
               <Button
                 onClick={() => {
                   const level = parseInt(localStorage.getItem('clickerSuperPower') || '0');
-                  const cost = Math.floor((level + 1) * 1000);
+                  const cost = Math.floor((level + 1) * 2500);
                   if (coins >= cost) {
                     setCoins(prev => prev - cost);
                     localStorage.setItem('clickerSuperPower', String(level + 1));
                     toast({ title: "🚀 Супер мощность!", description: "Сила всех кликов увеличена!" });
                   }
                 }}
-                disabled={coins < Math.floor((parseInt(localStorage.getItem('clickerSuperPower') || '0') + 1) * 1000)}
+                disabled={coins < Math.floor((parseInt(localStorage.getItem('clickerSuperPower') || '0') + 1) * 2500)}
                 variant="outline"
                 size="sm"
                 className="glass-button"
               >
-                {Math.floor((parseInt(localStorage.getItem('clickerSuperPower') || '0') + 1) * 1000).toLocaleString()} FC
+                {Math.floor((parseInt(localStorage.getItem('clickerSuperPower') || '0') + 1) * 2500).toLocaleString()} FC
               </Button>
             </div>
           </Card>
@@ -1436,19 +1436,19 @@ const ClickerGame = () => {
                  <Button
                    onClick={() => {
                      const level = parseInt(localStorage.getItem('clickerEnergyBooster') || '0');
-                     const cost = Math.floor((level + 1) * 750);
+                     const cost = Math.floor((level + 1) * 1800);
                      if (coins >= cost) {
                        setCoins(prev => prev - cost);
                        localStorage.setItem('clickerEnergyBooster', String(level + 1));
                        toast({ title: "⚡ Энергия!", description: "Клики стали мощнее!" });
                      }
                    }}
-                   disabled={coins < Math.floor((parseInt(localStorage.getItem('clickerEnergyBooster') || '0') + 1) * 750)}
+                   disabled={coins < Math.floor((parseInt(localStorage.getItem('clickerEnergyBooster') || '0') + 1) * 1800)}
                    variant="outline"
                    size="sm"
                    className="glass-button"
                  >
-                   {Math.floor((parseInt(localStorage.getItem('clickerEnergyBooster') || '0') + 1) * 750).toLocaleString()} FC
+                   {Math.floor((parseInt(localStorage.getItem('clickerEnergyBooster') || '0') + 1) * 1800).toLocaleString()} FC
                  </Button>
             </div>
           </Card>
@@ -1467,19 +1467,19 @@ const ClickerGame = () => {
               <Button
                 onClick={() => {
                   const level = parseInt(localStorage.getItem('clickerLuckyClick') || '0');
-                  const cost = Math.floor((level + 1) * 2000);
+                  const cost = Math.floor((level + 1) * 5000);
                   if (coins >= cost) {
                     setCoins(prev => prev - cost);
                     localStorage.setItem('clickerLuckyClick', String(level + 1));
                     toast({ title: "💎 Удача!", description: "Шанс получить бонусные коины увеличен!" });
                   }
                 }}
-                disabled={coins < Math.floor((parseInt(localStorage.getItem('clickerLuckyClick') || '0') + 1) * 2000)}
+                disabled={coins < Math.floor((parseInt(localStorage.getItem('clickerLuckyClick') || '0') + 1) * 5000)}
                 variant="outline"
                 size="sm"
                 className="glass-button"
               >
-                {Math.floor((parseInt(localStorage.getItem('clickerLuckyClick') || '0') + 1) * 2000).toLocaleString()} FC
+                {Math.floor((parseInt(localStorage.getItem('clickerLuckyClick') || '0') + 1) * 5000).toLocaleString()} FC
               </Button>
             </div>
           </Card>
@@ -1498,19 +1498,19 @@ const ClickerGame = () => {
               <Button
                 onClick={() => {
                   const level = parseInt(localStorage.getItem('clickerMastery') || '0');
-                  const cost = Math.floor((level + 1) * 5000);
+                  const cost = Math.floor((level + 1) * 12000);
                   if (coins >= cost) {
                     setCoins(prev => prev - cost);
                     localStorage.setItem('clickerMastery', String(level + 1));
                     toast({ title: "👑 Мастерство!", description: "Общая эффективность повышена!" });
                   }
                 }}
-                disabled={coins < Math.floor((parseInt(localStorage.getItem('clickerMastery') || '0') + 1) * 5000)}
+                disabled={coins < Math.floor((parseInt(localStorage.getItem('clickerMastery') || '0') + 1) * 12000)}
                 variant="outline"
                 size="sm"
                 className="glass-button"
               >
-                {Math.floor((parseInt(localStorage.getItem('clickerMastery') || '0') + 1) * 5000).toLocaleString()} FC
+                {Math.floor((parseInt(localStorage.getItem('clickerMastery') || '0') + 1) * 12000).toLocaleString()} FC
               </Button>
             </div>
           </Card>
