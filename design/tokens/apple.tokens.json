@@ -1,0 +1,88 @@
+{
+  "$themes": [
+    {
+      "id": "apple-light",
+      "name": "Apple Light",
+      "selectedTokenSets": {
+        "core": "source",
+        "semantic": "enabled"
+      },
+      "$figmaStyleReferences": {}
+    }
+  ],
+  "$metadata": { "tokenSetOrder": ["core", "semantic"] },
+  "core": {
+    "color": {
+      "white": { "type": "color", "value": "#FFFFFF" },
+      "black": { "type": "color", "value": "#000000" },
+      "gray/50": { "type": "color", "value": "#F8F8F8" },
+      "gray/100": { "type": "color", "value": "#F2F2F2" },
+      "gray/200": { "type": "color", "value": "#EAEAEA" },
+      "gray/300": { "type": "color", "value": "#DDDDDD" },
+      "gray/400": { "type": "color", "value": "#B9B9B9" },
+      "blue/500": { "type": "color", "value": "#0A84FF" },
+      "red/500": { "type": "color", "value": "#FF3B30" }
+    },
+    "radius": {
+      "sm": { "type": "borderRadius", "value": "8" },
+      "md": { "type": "borderRadius", "value": "10" },
+      "lg": { "type": "borderRadius", "value": "12" },
+      "xl": { "type": "borderRadius", "value": "16" }
+    },
+    "shadow": {
+      "soft": {
+        "type": "boxShadow",
+        "value": [
+          { "x": 0, "y": 1, "blur": 3, "spread": 0, "color": "rgba(0,0,0,0.08)" },
+          { "x": 0, "y": 6, "blur": 20, "spread": 0, "color": "rgba(0,0,0,0.04)" }
+        ]
+      }
+    },
+    "spacing": {
+      "xs": { "type": "spacing", "value": "4" },
+      "sm": { "type": "spacing", "value": "8" },
+      "md": { "type": "spacing", "value": "12" },
+      "lg": { "type": "spacing", "value": "16" },
+      "xl": { "type": "spacing", "value": "24" },
+      "2xl": { "type": "spacing", "value": "32" }
+    },
+    "blur": {
+      "10": { "type": "custom", "value": "10" },
+      "20": { "type": "custom", "value": "20" },
+      "30": { "type": "custom", "value": "30" },
+      "40": { "type": "custom", "value": "40" }
+    },
+    "typography": {
+      "body": {
+        "type": "typography",
+        "value": {
+          "fontFamily": "SF Pro Text, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 24
+        }
+      },
+      "title": {
+        "type": "typography",
+        "value": {
+          "fontFamily": "SF Pro Display, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif",
+          "fontSize": 20,
+          "fontWeight": 600,
+          "lineHeight": 26
+        }
+      }
+    }
+  },
+  "semantic": {
+    "color": {
+      "bg": { "type": "color", "value": "{core.color.white}" },
+      "text": { "type": "color", "value": "#1A1A1A" },
+      "card": { "type": "color", "value": "{core.color.white}" },
+      "mutedBg": { "type": "color", "value": "{core.color.gray/50}" },
+      "mutedText": { "type": "color", "value": "#6B7280" },
+      "border": { "type": "color", "value": "{core.color.gray/200}" },
+      "accent": { "type": "color", "value": "{core.color.blue/500}" },
+      "danger": { "type": "color", "value": "{core.color.red/500}" }
+    }
+  }
+}

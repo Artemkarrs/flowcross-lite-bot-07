@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Home, Play, Gamepad, Package, Database, Map, ChevronUp, ChevronDown } from 'lucide-react';
+import { Home, Play, Gamepad, Package, Database, Map, ChevronUp, ChevronDown, Command } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavigationProps {
@@ -20,6 +20,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
     { id: 'inventory', icon: Package, label: 'Инвентарь' },
     { id: 'cards', icon: Map, label: 'Карты' },
     { id: 'data', icon: Database, label: 'Данные' },
+    { id: 'apple', icon: Command, label: 'Apple UI' },
   ];
 
   const renderTab = (tab: any) => {

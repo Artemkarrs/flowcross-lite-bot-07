@@ -11,6 +11,7 @@ import AppLoader from '@/components/AppLoader';
 import GemCounter from '@/components/GemCounter';
 import GemCollector from '@/components/GemCollector';
 import GameDataManager from '@/components/GameDataManager';
+import AppleDemo from '@/components/apple/AppleDemo';
 import { enableAutoSave, loadAllGameData } from '@/lib/localdb';
 import { Play, Gamepad, MessageCircle, CreditCard, Info } from 'lucide-react';
 
@@ -40,6 +41,8 @@ const Index = () => {
         return <div className="animate-slide-in-left"><Cards /></div>;
       case 'data':
         return <div className="animate-scale-in"><GameDataManager /></div>;
+      case 'apple':
+        return <div className="animate-fade-in"><AppleDemo /></div>;
       default:
         return <div className="animate-fade-in"><HomeContent /></div>;
     }
