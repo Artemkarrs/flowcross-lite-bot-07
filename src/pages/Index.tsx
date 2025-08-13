@@ -10,21 +10,12 @@ import Cards from '@/components/Cards';
 import AppLoader from '@/components/AppLoader';
 import GemCounter from '@/components/GemCounter';
 import GemCollector from '@/components/GemCollector';
-import GameDataManager from '@/components/GameDataManager';
-import { enableAutoSave, loadAllGameData } from '@/lib/localdb';
-import { Play, Gamepad, MessageCircle, CreditCard, Info } from 'lucide-react';
+import { Play, Gamepad, CreditCard, Map } from 'lucide-react';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Инициализация системы сохранений
-  useEffect(() => {
-    // Загрузить все данные при запуске
-    loadAllGameData();
-    // Включить автосохранение
-    enableAutoSave();
-  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -38,8 +29,6 @@ const Index = () => {
         return <div className="animate-fade-in"><BankingApp /></div>;
       case 'cards':
         return <div className="animate-slide-in-left"><Cards /></div>;
-      case 'data':
-        return <div className="animate-scale-in"><GameDataManager /></div>;
       default:
         return <div className="animate-fade-in"><HomeContent /></div>;
     }
@@ -53,7 +42,9 @@ const Index = () => {
     <div className="min-h-screen bg-background relative overflow-hidden enhanced-bg">
       <div className="relative z-10 flex flex-col h-screen max-w-md mx-auto">
         <GemCounter />
-        <main className="flex-1 p-4 pb-28 overflow-y-auto">
+        
+        {/* Content container with padding for clean spacing */}
+        <main className="flex-1 p-6 pb-32 overflow-y-auto">
           <div className="fade-in">
             {renderContent()}
           </div>
@@ -126,89 +117,76 @@ const Stars = () => {
 };
 
 const HomeContent = () => {
+  const quickActions = [
+    { id: 'clicker', icon: Play, label: 'Кликер', description: 'Зарабатывай кликами' },
+    { id: 'cases', icon: Gamepad, label: 'Кейсы', description: 'Открывай награды' },
+    { id: 'bank', icon: CreditCard, label: 'Банк', description: 'Управляй финансами' },
+    { id: 'cards', icon: Map, label: 'Карты', description: 'Коллекционируй' },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold gradient-text">
-          FlowCross Bot
+        <h1 className="text-5xl font-light tracking-tight text-foreground">
+          FlowCross
         </h1>
-        <p className="text-muted-foreground text-sm opacity-80">
-          Поддержка игроков FlowCross Launcher
+        <p className="text-lg text-muted-foreground font-light">
+          Современный игровой лаунчер
         </p>
       </div>
 
-      {/* Main Container */}
-      <Card className="glass p-6 space-y-6">
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="glass p-6 card-hover ripple cursor-pointer">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Play className="w-7 h-7 text-primary animate-pulse" />
+      {/* Quick Actions Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Card key={action.id} className="glass p-6 card-hover ripple cursor-pointer border-0">
+              <div className="flex flex-col items-center space-y-3 text-center">
+                <div className="p-3 rounded-2xl bg-primary/5 border border-primary/10">
+                  <Icon className="w-6 h-6 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-sm font-medium text-foreground">{action.label}</span>
+                  <p className="text-xs text-muted-foreground">{action.description}</p>
+                </div>
               </div>
-              <span className="text-sm font-medium">Кликер</span>
-            </div>
-          </Card>
-          
-          <Card className="glass p-6 card-hover ripple cursor-pointer">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Gamepad className="w-7 h-7 text-primary animate-pulse" style={{animationDelay: '0.5s'}} />
-              </div>
-              <span className="text-sm font-medium">Кейсы</span>
-            </div>
-          </Card>
-          
-          <Card className="glass p-6 card-hover ripple cursor-pointer">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="p-2 rounded-full bg-primary/10">
-                <CreditCard className="w-7 h-7 text-primary animate-pulse" style={{animationDelay: '1s'}} />
-              </div>
-              <span className="text-sm font-medium">Банк</span>
-            </div>
-          </Card>
-          
-          <Card className="glass p-6 card-hover ripple cursor-pointer">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="p-2 rounded-full bg-primary/10">
-                <span className="text-2xl animate-pulse" style={{animationDelay: '1.5s'}}>🎴</span>
-              </div>
-              <span className="text-sm font-medium">Карты</span>
-            </div>
-          </Card>
-        </div>
+            </Card>
+          );
+        })}
+      </div>
 
-        {/* Main Site Link */}
+      {/* Main CTA */}
+      <Card className="glass p-8 space-y-6 border-0">
         <div className="text-center space-y-4">
-          <h3 className="text-xl font-semibold gradient-text">FlowCross Launcher</h3>
-          <p className="text-sm text-muted-foreground/80">
-            Современный игровой лаунчер Minecraft для максимальной производительности
+          <h2 className="text-2xl font-light text-foreground">FlowCross Launcher</h2>
+          <p className="text-muted-foreground font-light leading-relaxed">
+            Максимальная производительность и современный дизайн для вашего игрового опыта
           </p>
           <Button 
-            className="glass-button w-full ripple text-base py-3"
+            className="glass-button w-full h-12 text-base font-medium ripple click-button border-0"
             onClick={() => window.open('https://flowcross.space', '_blank')}
           >
-            Перейти на сайт
+            Открыть FlowCross
           </Button>
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-5 text-center">
-            <div className="text-3xl font-bold gradient-text mb-1">490</div>
-            <div className="text-xs text-muted-foreground/70 uppercase tracking-wide">Avg FPS</div>
-          </div>
-          <div className="p-5 text-center">
-            <div className="text-3xl font-bold gradient-text mb-1">+60%</div>
-            <div className="text-xs text-muted-foreground/70 uppercase tracking-wide">Memory</div>
-          </div>
-          <div className="p-5 text-center">
-            <div className="text-3xl font-bold gradient-text mb-1">+40%</div>
-            <div className="text-xs text-muted-foreground/70 uppercase tracking-wide">Speed</div>
-          </div>
-        </div>
       </Card>
+
+      {/* Performance Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center p-4">
+          <div className="text-3xl font-light text-foreground mb-2">490</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Avg FPS</div>
+        </div>
+        <div className="text-center p-4">
+          <div className="text-3xl font-light text-primary mb-2">+60%</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Memory</div>
+        </div>
+        <div className="text-center p-4">
+          <div className="text-3xl font-light text-primary mb-2">+40%</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Speed</div>
+        </div>
+      </div>
     </div>
   );
 };
