@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils';
 interface NavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onTabHover?: (tab: string) => void;
 }
 
-const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
+const Navigation = ({ activeTab, onTabChange, onTabHover }: NavigationProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
   const alwaysVisibleTabs = [
@@ -31,12 +32,16 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
       <button
         key={tab.id}
         onClick={() => onTabChange(tab.id)}
+        onMouseEnter={() => onTabHover?.(tab.id)}
         className={cn(
           "flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-300",
           isActive 
             ? "text-primary bg-primary/20 scale-110" 
             : "text-muted-foreground hover:text-primary hover:scale-105"
         )}
+        aria-label={tab.label}
+        aria-current={isActive ? 'page' : undefined}
+        title={tab.label}
       >
         <Icon className="w-5 h-5" />
         <span className="text-xs font-medium">{tab.label}</span>
@@ -61,6 +66,9 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
               "flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-300",
               "text-muted-foreground hover:text-primary hover:scale-105"
             )}
+            aria-expanded={isExpanded}
+            aria-label="Ещё"
+            title="Ещё"
           >
             {isExpanded ? (
               <ChevronDown className="w-5 h-5" />

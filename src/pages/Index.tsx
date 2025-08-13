@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Navigation from '@/components/Navigation';
-import ClickerGame from '@/components/games/ClickerGame';
-import EnhancedCasesGame from '@/components/games/EnhancedCasesGame';
-import Inventory from '@/components/Inventory';
-import BankingApp from '@/components/BankingApp';
-import Cards from '@/components/Cards';
+const ClickerGame = lazy(() => import('@/components/games/ClickerGame'));
+const EnhancedCasesGame = lazy(() => import('@/components/games/EnhancedCasesGame'));
+const Inventory = lazy(() => import('@/components/Inventory'));
+const BankingApp = lazy(() => import('@/components/BankingApp'));
+const Cards = lazy(() => import('@/components/Cards'));
+const GameDataManager = lazy(() => import('@/components/GameDataManager'));
+const AppleDemo = lazy(() => import('@/components/apple/AppleDemo'));
+import { enableAutoSave, loadAllGameData } from '@/lib/localdb';
+import { Play, Gamepad, MessageCircle, CreditCard, Info } from 'lucide-react';
 import AppLoader from '@/components/AppLoader';
 import GemCounter from '@/components/GemCounter';
 import GemCollector from '@/components/GemCollector';
-import GameDataManager from '@/components/GameDataManager';
-import AppleDemo from '@/components/apple/AppleDemo';
-import { enableAutoSave, loadAllGameData } from '@/lib/localdb';
-import { Play, Gamepad, MessageCircle, CreditCard, Info } from 'lucide-react';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -26,6 +26,34 @@ const Index = () => {
     // Включить автосохранение
     enableAutoSave();
   }, []);
+
+  const prefetchTab = (tab: string) => {
+    switch (tab) {
+      case 'clicker':
+        import('@/components/games/ClickerGame');
+        break;
+      case 'cases':
+        import('@/components/games/EnhancedCasesGame');
+        break;
+      case 'inventory':
+        import('@/components/Inventory');
+        break;
+      case 'bank':
+        import('@/components/BankingApp');
+        break;
+      case 'cards':
+        import('@/components/Cards');
+        break;
+      case 'data':
+        import('@/components/GameDataManager');
+        break;
+      case 'apple':
+        import('@/components/apple/AppleDemo');
+        break;
+      default:
+        break;
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -44,7 +72,7 @@ const Index = () => {
       case 'apple':
         return <div className="animate-fade-in"><AppleDemo /></div>;
       default:
-        return <div className="animate-fade-in"><HomeContent /></div>;
+        return <div className="animate-fade-in"><HomeContent onNavigate={setActiveTab} onPreload={prefetchTab} /></div>;
     }
   };
 
@@ -57,12 +85,21 @@ const Index = () => {
       <div className="relative z-10 flex flex-col h-screen max-w-md mx-auto">
         <GemCounter />
         <main className="flex-1 p-4 pb-28 overflow-y-auto">
-          <div className="fade-in">
-            {renderContent()}
-          </div>
+          <Suspense
+            fallback={
+              <div className="p-4 space-y-3">
+                <div className="h-6 w-1/3 bg-muted rounded" />
+                <div className="h-40 w-full bg-muted rounded" />
+              </div>
+            }
+          >
+            <div className="fade-in">
+              {renderContent()}
+            </div>
+          </Suspense>
         </main>
         
-        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <Navigation activeTab={activeTab} onTabChange={setActiveTab} onTabHover={prefetchTab} />
       </div>
     </div>
   );
@@ -128,7 +165,7 @@ const Stars = () => {
   );
 };
 
-const HomeContent = () => {
+const HomeContent = ({ onNavigate, onPreload }: { onNavigate: (tab: string) => void; onPreload: (tab: string) => void; }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -145,37 +182,61 @@ const HomeContent = () => {
       <Card className="glass p-6 space-y-6">
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="glass p-6 card-hover ripple cursor-pointer">
+          <Card
+            className="glass p-6 card-hover ripple cursor-pointer"
+            onClick={() => onNavigate('clicker')}
+            onMouseEnter={() => onPreload('clicker')}
+            role="button"
+            aria-label="Открыть Кликер"
+          >
             <div className="flex flex-col items-center space-y-3">
               <div className="p-2 rounded-full bg-primary/10">
-                <Play className="w-7 h-7 text-primary animate-pulse" />
+                <Play className="w-7 h-7 text-primary" />
               </div>
               <span className="text-sm font-medium">Кликер</span>
             </div>
           </Card>
           
-          <Card className="glass p-6 card-hover ripple cursor-pointer">
+          <Card
+            className="glass p-6 card-hover ripple cursor-pointer"
+            onClick={() => onNavigate('cases')}
+            onMouseEnter={() => onPreload('cases')}
+            role="button"
+            aria-label="Открыть Кейсы"
+          >
             <div className="flex flex-col items-center space-y-3">
               <div className="p-2 rounded-full bg-primary/10">
-                <Gamepad className="w-7 h-7 text-primary animate-pulse" style={{animationDelay: '0.5s'}} />
+                <Gamepad className="w-7 h-7 text-primary" />
               </div>
               <span className="text-sm font-medium">Кейсы</span>
             </div>
           </Card>
           
-          <Card className="glass p-6 card-hover ripple cursor-pointer">
+          <Card
+            className="glass p-6 card-hover ripple cursor-pointer"
+            onClick={() => onNavigate('bank')}
+            onMouseEnter={() => onPreload('bank')}
+            role="button"
+            aria-label="Открыть Банк"
+          >
             <div className="flex flex-col items-center space-y-3">
               <div className="p-2 rounded-full bg-primary/10">
-                <CreditCard className="w-7 h-7 text-primary animate-pulse" style={{animationDelay: '1s'}} />
+                <CreditCard className="w-7 h-7 text-primary" />
               </div>
               <span className="text-sm font-medium">Банк</span>
             </div>
           </Card>
           
-          <Card className="glass p-6 card-hover ripple cursor-pointer">
+          <Card
+            className="glass p-6 card-hover ripple cursor-pointer"
+            onClick={() => onNavigate('cards')}
+            onMouseEnter={() => onPreload('cards')}
+            role="button"
+            aria-label="Открыть Карты"
+          >
             <div className="flex flex-col items-center space-y-3">
               <div className="p-2 rounded-full bg-primary/10">
-                <span className="text-2xl animate-pulse" style={{animationDelay: '1.5s'}}>🎴</span>
+                <span className="text-2xl">🎴</span>
               </div>
               <span className="text-sm font-medium">Карты</span>
             </div>
